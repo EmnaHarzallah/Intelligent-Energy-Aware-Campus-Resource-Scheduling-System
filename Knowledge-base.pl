@@ -135,14 +135,14 @@ room_building(li2121bis, bat_labo).
 
 room_capacity(a1,  100). room_capacity(a2,  200). room_capacity(a5,  100).
 room_capacity(a6,  100). room_capacity(a7,  200).
-room_capacity(r103, 40). room_capacity(r105, 40). room_capacity(r115, 40).
-room_capacity(r135, 40). room_capacity(r145, 40). room_capacity(r153, 35).
+room_capacity(r103, 50). room_capacity(r105, 50). room_capacity(r115, 50).
+room_capacity(r135, 50). room_capacity(r145, 50). room_capacity(r153, 35).
 room_capacity(r155, 35). room_capacity(r169, 35). room_capacity(r171, 35).
-room_capacity(r203, 40). room_capacity(r209, 40). room_capacity(r215, 40).
-room_capacity(r217, 40). room_capacity(r219, 40). room_capacity(r223, 40).
-room_capacity(r225, 40). room_capacity(r227, 40). room_capacity(r231, 40).
-room_capacity(r235, 40). room_capacity(r239, 40). room_capacity(r245, 40).
-room_capacity(r247, 40).
+room_capacity(r203, 50). room_capacity(r209, 50). room_capacity(r215, 50).
+room_capacity(r217, 50). room_capacity(r219, 50). room_capacity(r223, 50).
+room_capacity(r225, 50). room_capacity(r227, 50). room_capacity(r231, 50).
+room_capacity(r235, 50). room_capacity(r239, 50). room_capacity(r245, 50).
+room_capacity(r247, 50).
 room_capacity(li013, 24). room_capacity(li116, 24). room_capacity(li173, 24).
 room_capacity(li175, 24). room_capacity(li177, 24). room_capacity(li208, 24).
 room_capacity(li210, 24). room_capacity(li212, 24). room_capacity(li255, 24).
@@ -386,6 +386,7 @@ course_instructor(gl2_analyse2,       trigui_elloumi_fatma).
 course_instructor(gl2_analyse2_td,    trigui_elloumi_fatma).
 course_instructor(gl2_algebre2,       hmida_jendoubi_nadia).
 course_instructor(gl2_algebre2_td,    hmida_jendoubi_nadia).
+course_instructor(gl2_algebre_td , soussi_yosra).
 course_instructor(gl2_sgbd,           baklouti_fatma).
 course_instructor(gl2_sgbd_tp,        baklouti_fatma).
 course_instructor(gl2_applic_rep,     ben_hassouna_asma).
@@ -888,6 +889,11 @@ same_or_related_group(C1, C2) :-
     course_group(C1, Sub), parent_group(Sub, P), course_group(C2, P).
 same_or_related_group(C1, C2) :-
     course_group(C1, P), parent_group(Sub, P), course_group(C2, Sub).
+
+same_or_related_group(C1, C2) :- 
+    course_group(C1, S1), parent_group(S1, P), 
+    course_group(C2, S2), parent_group(S2, P), 
+    S1 \= S2.
 
 % ⑥
 no_instructor_conflict(_, _, []).
