@@ -1,6 +1,6 @@
 /* ============================================================
    INTELLIGENT ENERGY-AWARE CAMPUS SCHEDULING SYSTEM
-   Authors : Membre A  + B 
+   Authors : Minyar Frifita 
    Projet   : Prolog
    ============================================================
 

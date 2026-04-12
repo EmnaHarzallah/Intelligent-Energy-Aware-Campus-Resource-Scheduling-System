@@ -1,10 +1,10 @@
 /* ============================================================
    PART C — RECURSIVE SCHEDULE GENERATION
-   Author : Member C
+   Author : Emna Harzallah
    Load AFTER knowledge_base_insat_gl_complet_memA.pl
    ============================================================
 
-   This file uses predicates provided by A+B :
+   This file uses predicates provided by Knowledge Base :
      - sessions_to_schedule/1        (lists all sessions)
      - sessions_to_schedule_level/2  (filters by level)
      - valid_assignment/5            (checks all constraints)
@@ -21,20 +21,31 @@
 /* ============================================================
    1. RECURSIVE BACKTRACKING ENGINE
    ============================================================ */
-
+ 
 %% schedule(+Sessions, -Schedule)
-%  Sessions : list of (Course, SessionIndex) to place
-%  Schedule : list of valid assignments found by backtracking
-
-schedule([], []).
-schedule([(Course, Idx) | RestSessions], [assignment(Course, Idx, Room, Ts) | RestPlan]) :-
+%  Entry point
+ 
+schedule(Sessions, Schedule) :-
+    schedule(Sessions, [], Schedule).
+ 
+%% schedule(+Remaining, +Placed, -Schedule)
+%  Recursive worker with accumulator
+ 
+schedule([], Acc, Acc).
+schedule([(Course, Idx) | Rest], Acc, Schedule) :-
     % Pick a candidate room and timeslot
     room(Room),
     timeslot(Ts, _, _, _),
-    % Early pruning: check ALL constraints before going deeper
-    valid_assignment(Course, Idx, Room, Ts, RestPlan),
-    % Recurse on the remaining sessions
-    schedule(RestSessions, RestPlan).
+    % Static constraints (independent of partial schedule)
+    equipment_ok(Course, Room),
+    capacity_ok(Course, Room),
+    instructor_available_ok(Course, Ts),
+    % Dynamic constraints: check against ALREADY placed sessions
+    no_room_conflict(Room, Ts, Acc),
+    no_group_conflict(Course, Ts, Acc),
+    no_instructor_conflict(Course, Ts, Acc),
+    % Add this assignment to the accumulator
+    schedule(Rest, [assignment(Course, Idx, Room, Ts) | Acc], Schedule).
 
 
 /* ============================================================
@@ -61,9 +72,6 @@ generate_schedule_level(Level, Schedule) :-
    3. FIND ALL SOLUTIONS (small test example)
    ============================================================ */
 
-%% all_solutions_level(+Level, -AllPlans)
-%  Finds ALL possible schedules for a given level
-%  ⚠ Use on a small subset only (e.g. gl3)
 
 all_solutions_level(Level, AllPlans) :-
     findall(Plan, generate_schedule_level(Level, Plan), AllPlans).
@@ -103,33 +111,28 @@ show_all_solutions(Level) :-
         nth1(I, Plans, Plan),
         (format("~n--- Solution #~w ---~n", [I]), display_schedule(Plan))
     ).
-
-
+    
 /* ============================================================
-   5. RECOMMENDED TESTS
-   ============================================================
+   5. DEBUG TESTS
+   ============================================================*/
 
-   % Load both files in SWI-Prolog:
-   ?- [knowledge_base_insat_gl_complet_memA].
-   ?- [member_C_schedule].
+  % Test one assignment manually with empty partial schedule
+test_one_assignment :-
+    Course = gl3_prog_logique,
+    room(Room),
+    timeslot(Ts, _, _, _),
+    equipment_ok(Course, Room),
+    capacity_ok(Course, Room),
+    instructor_available_ok(Course, Ts),
+    format("OK: ~w -> ~w @ ~w~n", [Course, Room, Ts]), !.
+ 
+test_one_assignment :-
+    write("FAIL: no valid assignment found."), nl.
+ 
+% Test scheduling just 2 sessions
+test_mini :-
+    Sessions = [(gl3_prog_logique, 1), (gl3_prog_logique, 2)],
+    schedule(Sessions, Plan),
+    display_schedule(Plan).
+    
 
-   % Quick test: first schedule for GL3
-   ?- show_schedule(gl3).
-
-   % Count all solutions for GL3
-   ?- count_solutions_level(gl3, N).
-
-   % Display all GL3 solutions
-   ?- show_all_solutions(gl3).
-
-   % Test a single valid assignment (with empty partial schedule)
-   ?- valid_assignment(gl3_prog_logique, 1, Room, Ts, []),
-      format("Room: ~w | Timeslot: ~w~n", [Room, Ts]).
-
-   % Check backtracking works on GL2 alone
-   ?- generate_schedule_level(gl2, Plan), length(Plan, N),
-      format("~w sessions placed~n", [N]).
-
-   ============================================================ */
-
-/* END — member_C_schedule.pl */
