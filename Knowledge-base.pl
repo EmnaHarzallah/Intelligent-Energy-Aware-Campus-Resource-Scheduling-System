@@ -88,10 +88,10 @@ timeslot(ts(samedi,2),   samedi,   2,  585).
 building(bat_amphi).
 building(bat_cours).
 building(bat_labo).
-
+:- dynamic building_energy_max/2.
 building_energy_max(bat_amphi, 80).
 building_energy_max(bat_cours, 60).
-building_energy_max(bat_labo, 120).
+building_energy_max(bat_labo, 200).
 
 
 /* ============================================================
@@ -251,7 +251,7 @@ instructor(negra_amamou_bouthei).
 course(gl2_archi_res).    course(gl2_archi_res_tdtp). course(gl2_analyse2).
 course(gl2_analyse2_td).  course(gl2_algebre2).       course(gl2_algebre2_td).
 course(gl2_sgbd).         course(gl2_sgbd_tp).        course(gl2_applic_rep).
-course(gl2_applic_rep_tp).course(gl2_csi).            course(gl2_csi_td).
+course(gl2_applic_rep_tp). course(gl2_csi).            course(gl2_csi_td).
 course(gl2_csi_tp).       course(gl2_atelier_java).   course(gl2_unix).
 course(gl2_tech_web).     course(gl2_droit).          course(gl2_comptabilite).
 course(gl2_anglais).
@@ -259,7 +259,7 @@ course(gl2_anglais).
 % GL3
 course(gl3_prog_logique).    course(gl3_prog_logique_tp). course(gl3_bases_rel).
 course(gl3_bases_rel_td).    course(gl3_bases_nonrel).    course(gl3_fond_syst_rep).
-course(gl3_fond_syst_rep_td).course(gl3_analyse_num).     course(gl3_analyse_data).
+course(gl3_fond_syst_rep_td). course(gl3_analyse_num).     course(gl3_analyse_data).
 course(gl3_analyse_data_tp). course(gl3_algorithmique).   course(gl3_optimisation).
 course(gl3_complexite).      course(gl3_co_design).       course(gl3_co_design_tp).
 course(gl3_protoc_web).      course(gl3_protoc_web_tp).   course(gl3_methodo_conc).
@@ -268,8 +268,8 @@ course(gl3_anglais).         course(gl3_ppp).
 
 % GL4
 course(gl4_devops).          course(gl4_devops_tp).       course(gl4_deep_learning).
-course(gl4_deep_learning_tp).course(gl4_compilation).     course(gl4_compilation_tp).
-course(gl4_traitement_img).  course(gl4_traitement_img_tp).course(gl4_big_data).
+course(gl4_deep_learning_tp). course(gl4_compilation).     course(gl4_compilation_tp).
+course(gl4_traitement_img).  course(gl4_traitement_img_tp). course(gl4_big_data).
 course(gl4_big_data_tp).     course(gl4_archi_log).       course(gl4_archi_log_tp).
 course(gl4_protoc_secu).     course(gl4_protoc_secu_tp).  course(gl4_ihm).
 course(gl4_test_logiciel).   course(gl4_management).      course(gl4_grh).
