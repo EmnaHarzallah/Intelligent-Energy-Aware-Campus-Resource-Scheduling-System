@@ -44,7 +44,7 @@ session_energy(Room, Course, Energy) :-
     room_energy_cost(Room, Epsilon),
     course_duration(Course, Duration),
     % 1 slot = 1.5 heures (90 min). E = Coût_horaire * Slots * 1.5
-    Energy is Epsilon * Duration * 1.5.
+    Energy is Epsilon * Duration..
 
 
 /* ============================================================
@@ -73,17 +73,16 @@ respect_emax(Building, CurrentEnergy) :-
 %% accumulate_building_energy(+Schedule, +Building, +Day, +Acc, -Total)
 %  Parcourt récursivement le planning.
 %  Pour chaque assignment dans le bâtiment B le jour D,
-%  calcule l'énergie de la session et l'ajoute à l'accumulateur.
+%  calcule l énergie de la session et l ajoute à l accumulateur.
 %  HC-6 est vérifiée immédiatement après chaque ajout (early pruning).
 
 accumulate_building_energy([], _Building, _Day, Acc, Acc).
 
 accumulate_building_energy(
-    [assignment(Course, _Idx, Room, Ts) | Rest],
-    Building, Day, Acc, Total) :-
-    (   room_building(Room, Building),
+    [assignment(Course, _Group, Room, Ts, _WeekTag) | Rest]  :-
+      room_building(Room, Building),
         timeslot(Ts, Day, _, _)
-    ->
+
         % Cette session appartient au bâtiment B ce jour D
         session_energy(Room, Course, E),
         NewAcc is Acc + E,
@@ -93,18 +92,18 @@ accumulate_building_energy(
         respect_emax(Building, NewAcc),
         accumulate_building_energy(Rest, Building, Day, NewAcc, Total)
     ;
-        % Cette session n'appartient pas à ce bâtiment ce jour-là, on passe
+        % Cette session n appartient pas à ce bâtiment ce jour-là, on passe
         accumulate_building_energy(Rest, Building, Day, Acc, Total)
     ).
 
 
 %% building_day_energy(+Schedule, +Building, +Day, -Energy)
-%  Calcule la consommation totale d'un bâtiment pour un jour donné.
-%  Version sans vérification HC-6 — utilisée pour les métriques et rapports.
+%  Calcule la consommation totale d un bâtiment pour un jour donné.
+%  Version sans vérification HC-6 — utilisée pour les metriques et rapports.
 
 building_day_energy(Schedule, Building, Day, Energy) :-
     findall(E,
-        (   member(assignment(Course, _Idx, Room, Ts), Schedule),
+        (   member(assignment(Course, _Group, Room, Ts, _WeekTag), Schedule),
             room_building(Room, Building),
             timeslot(Ts, Day, _, _),
             session_energy(Room, Course, E)
@@ -121,11 +120,11 @@ building_day_energy(Schedule, Building, Day, Energy) :-
 %% check_all_energy_constraints(+Schedule)
 %  Vérifie que HC-6 est respectée pour chaque (bâtiment, jour).
 %  Utilise forall/2 pour tester toutes les combinaisons.
-%  Échoue dès qu'une violation est trouvée.
+%  Échoue dès qu une violation est trouvée.
 
 check_all_energy_constraints(Schedule) :-
     forall(
-        (building(B), timeslot(_, D, _, _)),
+        (building_energy_max(B, _), timeslot(_, D, _, _)),
         (   building_day_energy(Schedule, B, D, E),
             respect_emax(B, E)
         )
@@ -139,13 +138,13 @@ check_all_energy_constraints(Schedule) :-
 
 %% total_weekly_energy(+Schedule, -ETotal)
 %  Calcule la consommation énergétique totale sur toute la semaine
-%  et tous les bâtiments. Métrique principale pour l'optimisation (Partie 4).
+%  et tous les bâtiments. Métrique principale pour l optimisation (Partie 4).
 
 total_weekly_energy(Schedule, ETotal) :-
     % Collect unique days to avoid counting each day N times (once per timeslot)
     setof(D, Ts^Slot^Min^timeslot(Ts, D, Slot, Min), Days),
     findall(E,
-        (   building(B),
+        (   building_energy_max(B, _),
             member(D, Days),
             building_day_energy(Schedule, B, D, E),
             E > 0
@@ -162,7 +161,7 @@ total_weekly_energy(Schedule, ETotal) :-
 
 %% schedule_with_energy(+Sessions, -Schedule)
 %  Génère un planning valide qui respecte TOUTES les contraintes,
-%  y compris HC-6 (énergie). Wrappe le générateur de Emna.
+%  y compris HC-6 (énergie). 
 
 schedule_with_energy(Sessions, Schedule) :-
     schedule_energy(Sessions, [], Schedule).
@@ -182,17 +181,17 @@ schedule_energy([Session | Rest], Acc, Schedule) :-
     NewE is CurrentE + SessionE,
     respect_emax(Building, NewE),
     
-    % On ajoute l'assignment au format complet de la KB
+    % On ajoute l assignment au format complet de la KB
     NewAssignment = assignment(Course, Group, Room, Ts, WeekTag),
     schedule_energy(Rest, [NewAssignment | Acc], Schedule).
 
 
 %% generate_schedule_with_energy(-Schedule)
-%  Point d'entrée principal : génère un planning complet (GL2+GL3+GL4)
+%  Point d entrée principal : génère un planning complet (GL2+GL3+GL4)
 %  avec contrainte énergétique intégrée.
 
 generate_schedule_with_energy(Schedule) :-
-    sessions_to_schedule(Sessions),
+    all_sessions(Sessions),
     schedule_with_energy(Sessions, Schedule).
 
 
@@ -201,7 +200,7 @@ generate_schedule_with_energy(Schedule) :-
 %  avec contrainte énergétique.
 
 generate_schedule_level_with_energy(Level, Schedule) :-
-    sessions_to_schedule_level(Level, Sessions),
+    sessions_to_schedule_v2(Level, Sessions),
     schedule_with_energy(Sessions, Schedule).
 
 
@@ -219,9 +218,8 @@ print_energy_report(Schedule) :-
     write('         RAPPORT DE CONSOMMATION ENERGETIQUE         '), nl,
     write('======================================================'), nl,
     forall(
-        building(B),
+        building_energy_max(B, Emax),
         (   nl,
-            building_energy_max(B, Emax),
             format("[Bâtiment: ~w | Emax = ~w unités]~n", [B, Emax]),
             forall(
                 member(Day, [lundi, mardi, mercredi, jeudi, vendredi, samedi]),
