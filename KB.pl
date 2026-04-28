@@ -36,6 +36,9 @@
 :- discontiguous course_equipment/2.
 :- discontiguous course_type/2.
 :- discontiguous course_quinzaine/1.
+:- discontiguous valid_assignment_v2/4.
+:- discontiguous course_sessions/2.
+:- discontiguous course_duration/2.
 
 /* ============================================================
    SECTION 1 : CRÉNEAUX HORAIRES
@@ -965,7 +968,7 @@ instructor_available_ok(Course, Timeslot) :-
     instructor_available(Instr, Timeslot).
 
 % ④ Pas de conflit de salle
-%    Format : assignment(Course, Group, Room, Ts, WeekTag)
+%    Format : assignment(Course, Group, Room, Ts, _WeekTag)
 no_room_conflict(_, _, []).
 no_room_conflict(Room, Ts, [assignment(_, _, Room, Ts, _)|_]) :- !, fail.
 no_room_conflict(Room, Ts, [_|Rest]) :-
@@ -997,6 +1000,7 @@ no_instructor_conflict(Course, Ts, [_|Rest]) :-
     no_instructor_conflict(Course, Ts, Rest).
 
 
+
 /* ============================================================
    SECTION 11 : PRÉDICATS CLÉS — INTERFACE POUR PART C
    ============================================================
@@ -1010,7 +1014,7 @@ no_instructor_conflict(Course, Ts, [_|Rest]) :-
 
 %% sessions_to_schedule_v2(+Level, -Sessions)
 %  Génère la liste des sessions à planifier.
-%  session(Course, Group, WeekTag)
+%  session(Course, Group, _WeekTag)
 
 sessions_to_schedule_v2(Level, Sessions) :-
     findall(S, session_for_level(Level, S), Raw),
@@ -1063,7 +1067,7 @@ session_for_level(Level, session(Course, Group, toutes_semaines)) :-
 %% valid_assignment_v2(+Session, -Room, -Timeslot, +Partial)
 % Cas amphi avec contrainte renforcée : tous les groupes du niveau doivent être ensemble
 
-valid_assignment_v2(session(Course, level(Level), WeekTag), Room, Ts, Partial) :-
+valid_assignment_v2(session(Course, level(Level), _WeekTag), Room, Ts, Partial) :-
     room(Room),
     timeslot(Ts, _, _, _),
     equipment_ok(Course, Room),

@@ -1,3 +1,5 @@
+:- encoding(utf8).
+
 /* ============================================================
    tests.pl — Suite de tests unifiée
    Auteurs : Minyar Frifita, Emna Harzallah, Imen Ben Ouaghrem
@@ -27,9 +29,11 @@
 
 run_test(Label, Goal) :-
     format("  ~w ... ", [Label]),
-    (call(Goal)
-    ->  write('PASS'), nl
-    ;   write('FAIL'), nl
+    (   once(call(Goal))
+    ->  write('PASS'),
+        nl
+    ;   write('FAIL'),
+        nl
     ).
 
 run_all_tests :-
@@ -138,13 +142,17 @@ run_scheduling_tests :-
         ( sessions_to_schedule_v2(gl3, Ss), Ss \= [] )),
 
     run_test('sessions_to_schedule_v2 gl2 — non vide',
-        ( sessions_to_schedule_v2(gl2, Ss), Ss \= [] )),
+    ( once(sessions_to_schedule_v2(gl2, Ss)), Ss \= [] )),
 
-    run_test('sessions_to_schedule_v2 gl4 — non vide',
-        ( sessions_to_schedule_v2(gl4, Ss), Ss \= [] )),
+run_test('sessions_to_schedule_v2 gl4 — non vide',
+    ( once(sessions_to_schedule_v2(gl4, Ss)), Ss \= [] )),
 
-    run_test('all_sessions — agrège les 3 niveaux',
-        ( all_sessions(Ss), length(Ss, N), N > 0 )),
+run_test('all_sessions — agrège les 3 niveaux',
+    ( once(all_sessions(Ss)), length(Ss, N), N > 0 )),
+
+run_test('no_instructor_conflict — détecte conflit trigui lundi-1',
+    ( mini_schedule(Mini),
+      \+ no_instructor_conflict(gl2_analyse2_td, ts(lundi,1), Mini) )),
 
     % --- valid_assignment_v2 ---
     run_test('valid_assignment_v2 — session TD sur partial vide',
