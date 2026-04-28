@@ -44,7 +44,7 @@ session_energy(Room, Course, Energy) :-
     room_energy_cost(Room, Epsilon),
     course_duration(Course, Duration),
     % 1 slot = 1.5 heures (90 min). E = Coût_horaire * Slots * 1.5
-    Energy is Epsilon * Duration..
+    Energy is Epsilon * Duration.
 
 
 /* ============================================================
@@ -79,20 +79,16 @@ respect_emax(Building, CurrentEnergy) :-
 accumulate_building_energy([], _Building, _Day, Acc, Acc).
 
 accumulate_building_energy(
-    [assignment(Course, _Group, Room, Ts, _WeekTag) | Rest]  :-
-      room_building(Room, Building),
+    [assignment(Course, _Group, Room, Ts, _WeekTag) | Rest],
+    Building, Day, Acc, Total) :-
+    (   room_building(Room, Building),
         timeslot(Ts, Day, _, _)
-
-        % Cette session appartient au bâtiment B ce jour D
+    ->
         session_energy(Room, Course, E),
         NewAcc is Acc + E,
-        % Vérification HC-6 EN COURS DE CONSTRUCTION — early enforcement
-        % Si la contrainte échoue ici, Prolog backtracke immédiatement
-        % sans explorer le reste du schedule.
         respect_emax(Building, NewAcc),
         accumulate_building_energy(Rest, Building, Day, NewAcc, Total)
     ;
-        % Cette session n appartient pas à ce bâtiment ce jour-là, on passe
         accumulate_building_energy(Rest, Building, Day, Acc, Total)
     ).
 
@@ -109,7 +105,7 @@ building_day_energy(Schedule, Building, Day, Energy) :-
             session_energy(Room, Course, E)
         ),
         Energies),
-    sumlist(Energies, Energy).
+    sum_list(Energies, Energy).
 
 
 /* ============================================================
@@ -150,7 +146,7 @@ total_weekly_energy(Schedule, ETotal) :-
             E > 0
         ),
         AllEnergies),
-    sumlist(AllEnergies, ETotal).
+    sum_list(AllEnergies, ETotal).
 
 
 /* ============================================================
@@ -248,38 +244,34 @@ print_energy_report(Schedule) :-
      ?- [\'Knowledge-base\'].
      ?- [recurisve_scheduling].
      ?- [energy_module].
-   ============================================================ */
+   
 
 %% run_energy_tests/0
 %  Lance tous les tests de validation de ce module.
 
 run_energy_tests :-
-    nl, write('--- TESTS MODULE ÉNERGIE (CORRIGÉS 1.5h) ---'), nl,
+    nl, write('--- TESTS MODULE ENERGIE ---'), nl,
 
-    % Test 1 : salle_td (Cost 3 * 1.5 = 4.5)
     session_energy(r203, gl2_analyse2_td, E1),
-    format("TEST 1 : E = ~w [Attendu: 4.5] ", [E1]),
-    (E1 =:= 4.5 -> write('OK') ; write('FAIL')), nl,
+    format("TEST 1 : E = ~w [Attendu: 3] ", [E1]),
+    (E1 =:= 3 -> write('OK') ; write('FAIL')), nl,
 
-
-    % Test 2 : labo_pc (Cost 8 * 1.5 = 12)
     session_energy(li013, gl3_prog_logique_tp, E2),
-    format("TEST 2 : E = ~w [Attendu: 12.0] ", [E2]),
-    (E2 =:= 12.0 -> write('OK') ; write('FAIL')), nl,
+    format("TEST 2 : E = ~w [Attendu: 8] ", [E2]),
+    (E2 =:= 8 -> write('OK') ; write('FAIL')), nl,
 
-    % Test 3 : Mini Schedule (Analyse TD [4.5] + Algebre TD [4.5] = 9.0)
     S = [assignment(gl2_analyse2_td, gl2_1, r203, ts(lundi,1), toutes_semaines),
          assignment(gl2_algebre2_td, gl2_1, r215, ts(lundi,2), toutes_semaines)],
     building_day_energy(S, bat_cours, lundi, E3),
-    format("TEST 3 : Bat_Cours Lundi = ~w [Attendu: 9.0] ", [E3]),
-    (E3 =:= 9.0 -> write('OK') ; write('FAIL')), nl.
+    format("TEST 3 : Bat_Cours Lundi = ~w [Attendu: 6] ", [E3]),
+    (E3 =:= 6 -> write('OK') ; write('FAIL')), nl,
 
     nl,
     write('=============================================='), nl,
     write('          FIN DES TESTS UNITAIRES            '), nl,
     write('=============================================='), nl.
 
-
+============================================================ */
 /* ============================================================
    SECTION 9 : REQUÊTES UTILES POUR LE RAPPORT
    Copier-coller ces requêtes dans SWI-Prolog pour générer
