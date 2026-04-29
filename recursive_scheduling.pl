@@ -3,12 +3,15 @@
    ============================================================
 
    Uses from KB:
-     sessions_to_schedule_v2/2   — produces session/3 structs
+     sessions_to_schedule_v2/2   — produces session/2 structs
      valid_assignment_v2/4       — checks all hard constraints
-     display_schedule/1          — expects assignment/5 terms
+     display_schedule/1          — expects assignment/4 terms
+     occupy_schedule_rooms/1     — marks global room occupancy
+     release_schedule_rooms/1    — rollback helper
+     apply_schedule_costs/1      — updates RemainingHour in cost/3
 
-   Session format  : session(Course, Group, WeekTag)
-   Assignment format: assignment(Course, Group, Room, Timeslot, WeekTag)
+   Session format   : session(SessionName, Group)
+   Assignment format: assignment(SessionName, Group, Room, Timeslot)
    ============================================================ */
 
 
@@ -31,9 +34,9 @@ schedule([], Acc, Acc).
 schedule([Session | Rest], Partial, Schedule) :-
     %% KB predicate: picks a valid Room+Ts against current Partial
     valid_assignment_v2(Session, Room, Ts, Partial),
-    Session = session(Course, Group, WeekTag),
-    %% Build assignment in the KBs 5-arg format
-    Asgn = assignment(Course, Group, Room, Ts, WeekTag),
+    Session = session(SessionName, Group),
+    %% Build assignment in the KB 4-arg format
+    Asgn = assignment(SessionName, Group, Room, Ts),
     schedule(Rest, [Asgn | Partial], Schedule).
 
 
@@ -63,6 +66,13 @@ all_sessions(Sessions) :-
 %  Full schedule for GL2 + GL3 + GL4.
 
 generate_schedule(Schedule) :-
+    once(generate_schedule_raw(Schedule)),
+    commit_schedule(Schedule).
+
+%% generate_schedule_raw(-Schedule)
+%  Full schedule without consuming remaining hours.
+
+generate_schedule_raw(Schedule) :-
     all_sessions(Sessions),
     schedule(Sessions, Schedule).
 
@@ -70,8 +80,33 @@ generate_schedule(Schedule) :-
 %  Schedule for one level: gl2, gl3, or gl4.
 
 generate_schedule_level(Level, Schedule) :-
+    once(generate_schedule_level_raw(Level, Schedule)),
+    commit_schedule(Schedule).
+
+%% generate_schedule_level_raw(+Level, -Schedule)
+%  Per-level schedule without consuming remaining hours.
+
+generate_schedule_level_raw(Level, Schedule) :-
     sessions_to_schedule_v2(Level, Sessions),
     schedule(Sessions, Schedule).
+
+
+%% commit_schedule(+Schedule)
+%  Applies side effects atomically from the scheduler perspective:
+%  1) lock rooms globally
+%  2) consume remaining hours (cost/3)
+%  If step 2 fails, release rooms locked in step 1.
+%
+%  Note: occupy_schedule_rooms/1 already rolls back its own partial
+%  locks when it fails, so we never force a blind release on that path.
+
+commit_schedule(Schedule) :-
+    occupy_schedule_rooms(Schedule),
+    (   apply_schedule_costs(Schedule)
+    ->  true
+    ;   release_schedule_rooms(Schedule),
+        fail
+    ).
 
 
 /* ============================================================
@@ -81,7 +116,7 @@ generate_schedule_level(Level, Schedule) :-
 %% all_solutions_level(+Level, -AllPlans)
 
 all_solutions_level(Level, AllPlans) :-
-    findall(Plan, generate_schedule_level(Level, Plan), AllPlans).
+    findall(Plan, generate_schedule_level_raw(Level, Plan), AllPlans).
 
 %% count_solutions_level(+Level, -N)
 
@@ -94,14 +129,15 @@ count_solutions_level(Level, N) :-
    5. DISPLAY
    ============================================================
    display_schedule/1 is defined in the KB and already handles
-   assignment/5 terms — we simply delegate.
+   assignment/4 terms — we simply delegate.
    ============================================================ */
 
 %% show_schedule(+Level)
 %  Displays the first valid schedule found for a level.
+%  Non-destructive: does not consume cost/3 and does not lock rooms.
 
 show_schedule(Level) :-
-    generate_schedule_level(Level, Schedule),
+    generate_schedule_level_raw(Level, Schedule),
     nl,
     format("=== Schedule for ~w ===~n", [Level]),
     display_schedule(Schedule),
@@ -129,7 +165,7 @@ show_all_solutions(Level) :-
 %  Manually tests that valid_assignment_v2 can fire at all.
 
 test_one_assignment :-
-    Session = session(gl3_prog_logique, gl3_1, toutes_semaines),
+    Session = session(gl3_prog_logique_td1, gl3_1),
     valid_assignment_v2(Session, Room, Ts, []),
     format("OK: ~w -> ~w @ ~w~n", [Session, Room, Ts]), !.
 test_one_assignment :-
@@ -140,8 +176,8 @@ test_one_assignment :-
 
 test_mini :-
     Sessions = [
-        session(gl3_prog_logique, gl3_1, toutes_semaines),
-        session(gl3_prog_logique, gl3_2, toutes_semaines)
+        session(gl3_prog_logique_td1, gl3_1),
+        session(gl3_prog_logique_td2, gl3_2)
     ],
     schedule(Sessions, Plan),
     display_schedule(Plan).

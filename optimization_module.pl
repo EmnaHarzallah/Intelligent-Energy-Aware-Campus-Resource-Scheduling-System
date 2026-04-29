@@ -1,2 +1,2 @@
 /* Compatibility wrapper: keep historical file name. */
-:- ensure_loaded('KB.pl').
+:- ensure_loaded('OM.pl').

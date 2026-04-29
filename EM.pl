@@ -7,17 +7,22 @@
 
    CHARGER APRÈS :
      1) Knowledge-base.pl
-     2) recurisve_scheduling.pl
+     2) recursive_scheduling.pl
 
    Ce module utilise les prédicats suivants de la Knowledge Base :
      - room_building(Room, Building)
      - room_energy_cost(Room, Cost)
      - building_energy_max(Building, Emax)
      - timeslot(Ts, Day, _, _)
-     - course_duration(Course, D)
+     - slot_hours/1
+     - sessions_to_schedule_v2/2
+     - valid_assignment_v2/4
+     - occupy_schedule_rooms/1
+     - release_schedule_rooms/1
+     - apply_schedule_costs/1
 
-   FORMAT D'ASSIGNMENT (produit par recurisve_scheduling.pl) :
-     assignment(Course, SessionIndex, Room, Timeslot)
+   FORMAT D'ASSIGNMENT (produit par recursive_scheduling.pl) :
+     assignment(SessionName, Group, Room, Timeslot)
 
    PRÉDICATS EXPORTÉS (utilisés par Partie 4 — Optimisation) :
      - session_energy/3
@@ -31,20 +36,22 @@
 
 /* ============================================================
    SECTION 1 : CALCUL ÉNERGÉTIQUE D'UNE SESSION
-   Formule : E_session = epsilon(room) * duration(course)
+   Formule : E_session = epsilon(room) * d_i
    epsilon(room) = room_energy_cost/2 (défini dans KB)
-   duration      = course_duration/2  (en nombre de slots, 1 slot = 90 min)
+   d_i = slot_hours/1 (durée d'un créneau)
    ============================================================ */
 
-%% session_energy(+Room, +Course, -Energy)
-%  Calcule l'énergie consommée par une session d'un cours dans une salle.
-%  Utilise room_energy_cost/2 et course_duration/2 de la Knowledge Base.
+%% session_energy(+Room, +Session, -Energy)
+%  Calcule l'énergie consommée par une session dans une salle.
+%  Utilise room_energy_cost/2 et slot_hours/1 de la Knowledge Base.
 
-session_energy(Room, Course, Energy) :-
+session_duration_hours(_Session, DurationHours) :-
+    slot_hours(DurationHours).
+
+session_energy(Room, Session, Energy) :-
     room_energy_cost(Room, Epsilon),
-    course_duration(Course, Duration),
-    % 1 slot = 1.5 heures (90 min). E = Coût_horaire * Slots * 1.5
-    Energy is Epsilon * Duration.
+    session_duration_hours(Session, Di),
+    Energy is Epsilon * Di.
 
 
 /* ============================================================
@@ -79,12 +86,12 @@ respect_emax(Building, CurrentEnergy) :-
 accumulate_building_energy([], _Building, _Day, Acc, Acc).
 
 accumulate_building_energy(
-    [assignment(Course, _Group, Room, Ts, _WeekTag) | Rest],
+    [assignment(SessionName, _Group, Room, Ts) | Rest],
     Building, Day, Acc, Total) :-
     (   room_building(Room, Building),
         timeslot(Ts, Day, _, _)
     ->
-        session_energy(Room, Course, E),
+        session_energy(Room, SessionName, E),
         NewAcc is Acc + E,
         respect_emax(Building, NewAcc),
         accumulate_building_energy(Rest, Building, Day, NewAcc, Total)
@@ -99,10 +106,10 @@ accumulate_building_energy(
 
 building_day_energy(Schedule, Building, Day, Energy) :-
     findall(E,
-        (   member(assignment(Course, _Group, Room, Ts, _WeekTag), Schedule),
+        (   member(assignment(SessionName, _Group, Room, Ts), Schedule),
             room_building(Room, Building),
             timeslot(Ts, Day, _, _),
-            session_energy(Room, Course, E)
+            session_energy(Room, SessionName, E)
         ),
         Energies),
     sum_list(Energies, Energy).
@@ -119,8 +126,9 @@ building_day_energy(Schedule, Building, Day, Energy) :-
 %  Échoue dès qu une violation est trouvée.
 
 check_all_energy_constraints(Schedule) :-
+    setof(D, Ts^Slot^Min^timeslot(Ts, D, Slot, Min), Days),
     forall(
-        (building_energy_max(B, _), timeslot(_, D, _, _)),
+        (building_energy_max(B, _), member(D, Days)),
         (   building_day_energy(Schedule, B, D, E),
             respect_emax(B, E)
         )
@@ -142,8 +150,7 @@ total_weekly_energy(Schedule, ETotal) :-
     findall(E,
         (   building_energy_max(B, _),
             member(D, Days),
-            building_day_energy(Schedule, B, D, E),
-            E > 0
+            building_day_energy(Schedule, B, D, E)
         ),
         AllEnergies),
     sum_list(AllEnergies, ETotal).
@@ -163,14 +170,14 @@ schedule_with_energy(Sessions, Schedule) :-
     schedule_energy(Sessions, [], Schedule).
 
 schedule_energy([], Acc, Acc).
-schedule_energy([Session | Rest], Acc, Schedule) :-
-    Session = session(Course, Group, WeekTag),
+schedule_energy([SessionTerm | Rest], Acc, Schedule) :-
+    SessionTerm = session(SessionName, Group),
     % Utilise la validation Feasibility de votre KB (Partie 1)
-    valid_assignment_v2(Session, Room, Ts, Acc),
+    valid_assignment_v2(SessionTerm, Room, Ts, Acc),
     
     % Contrainte énergétique HC-6 (Partie 3)
     room_building(Room, Building),
-    session_energy(Room, Course, SessionE),
+    session_energy(Room, SessionName, SessionE),
     timeslot(Ts, Day, _, _),
     building_day_energy(Acc, Building, Day, CurrentE),
     
@@ -178,7 +185,7 @@ schedule_energy([Session | Rest], Acc, Schedule) :-
     respect_emax(Building, NewE),
     
     % On ajoute l assignment au format complet de la KB
-    NewAssignment = assignment(Course, Group, Room, Ts, WeekTag),
+    NewAssignment = assignment(SessionName, Group, Room, Ts),
     schedule_energy(Rest, [NewAssignment | Acc], Schedule).
 
 
@@ -187,6 +194,15 @@ schedule_energy([Session | Rest], Acc, Schedule) :-
 %  avec contrainte énergétique intégrée.
 
 generate_schedule_with_energy(Schedule) :-
+    once(generate_schedule_with_energy_raw(Schedule)),
+    (   occupy_schedule_rooms(Schedule),
+        apply_schedule_costs(Schedule)
+    ->  true
+    ;   release_schedule_rooms(Schedule),
+        fail
+    ).
+
+generate_schedule_with_energy_raw(Schedule) :-
     all_sessions(Sessions),
     schedule_with_energy(Sessions, Schedule).
 
@@ -196,6 +212,15 @@ generate_schedule_with_energy(Schedule) :-
 %  avec contrainte énergétique.
 
 generate_schedule_level_with_energy(Level, Schedule) :-
+    once(generate_schedule_level_with_energy_raw(Level, Schedule)),
+    (   occupy_schedule_rooms(Schedule),
+        apply_schedule_costs(Schedule)
+    ->  true
+    ;   release_schedule_rooms(Schedule),
+        fail
+    ).
+
+generate_schedule_level_with_energy_raw(Level, Schedule) :-
     sessions_to_schedule_v2(Level, Sessions),
     schedule_with_energy(Sessions, Schedule).
 
@@ -209,6 +234,7 @@ generate_schedule_level_with_energy(Level, Schedule) :-
 %  avec indication PASS/VIOLATION pour chaque entrée.
 
 print_energy_report(Schedule) :-
+    setof(D, Ts^Slot^Min^timeslot(Ts, D, Slot, Min), Days),
     nl,
     write('======================================================'), nl,
     write('         RAPPORT DE CONSOMMATION ENERGETIQUE         '), nl,
@@ -218,7 +244,7 @@ print_energy_report(Schedule) :-
         (   nl,
             format("[Bâtiment: ~w | Emax = ~w unités]~n", [B, Emax]),
             forall(
-                member(Day, [lundi, mardi, mercredi, jeudi, vendredi, samedi]),
+                member(Day, Days),
                 (   building_day_energy(Schedule, B, Day, E),
                     (   E > 0
                     ->  (   E > Emax
@@ -240,38 +266,21 @@ print_energy_report(Schedule) :-
 
 /* ============================================================
    SECTION 8 : TESTS UNITAIRES
-   À lancer après chargement des 3 fichiers dans SWI-Prolog :
-     ?- [\'Knowledge-base\'].
-     ?- [recurisve_scheduling].
+   Les tests exécutables sont centralisés dans test.pl.
+   Charger puis lancer :
+
+     ?- ['Knowledge-base'].
+     ?- [recursive_scheduling].
      ?- [energy_module].
-   
+     ?- [test].
+     ?- run_energy_tests.
 
-%% run_energy_tests/0
-%  Lance tous les tests de validation de ce module.
-
-run_energy_tests :-
-    nl, write('--- TESTS MODULE ENERGIE ---'), nl,
-
-    session_energy(r203, gl2_analyse2_td, E1),
-    format("TEST 1 : E = ~w [Attendu: 3] ", [E1]),
-    (E1 =:= 3 -> write('OK') ; write('FAIL')), nl,
-
-    session_energy(li013, gl3_prog_logique_tp, E2),
-    format("TEST 2 : E = ~w [Attendu: 8] ", [E2]),
-    (E2 =:= 8 -> write('OK') ; write('FAIL')), nl,
-
-    S = [assignment(gl2_analyse2_td, gl2_1, r203, ts(lundi,1), toutes_semaines),
-         assignment(gl2_algebre2_td, gl2_1, r215, ts(lundi,2), toutes_semaines)],
-    building_day_energy(S, bat_cours, lundi, E3),
-    format("TEST 3 : Bat_Cours Lundi = ~w [Attendu: 6] ", [E3]),
-    (E3 =:= 6 -> write('OK') ; write('FAIL')), nl,
-
-    nl,
-    write('=============================================='), nl,
-    write('          FIN DES TESTS UNITAIRES            '), nl,
-    write('=============================================='), nl.
-
-============================================================ */
+   Références d'attendu (avec slot_hours = 1.5) :
+     - session_energy(r203, gl2_analyse2_td1, E)        -> E = 4.5
+     - session_energy(li013, gl3_prog_logique_tp1, E)   -> E = 12
+     - building_day_energy([2 sessions bat_cours lundi], bat_cours, lundi, E)
+                                                      -> E = 9
+   ============================================================ */
 /* ============================================================
    SECTION 9 : REQUÊTES UTILES POUR LE RAPPORT
    Copier-coller ces requêtes dans SWI-Prolog pour générer
@@ -279,13 +288,13 @@ run_energy_tests :-
    ============================================================
 
    % Charger les modules :
-   ?- [\'Knowledge-base\'], [recurisve_scheduling], [energy_module].
+   ?- ['Knowledge-base'], [recursive_scheduling], [energy_module], [test].
 
    % Lancer tous les tests :
    ?- run_energy_tests.
 
    % Calculer l'énergie d'une session :
-   ?- session_energy(li013, gl3_prog_logique_tp, E).
+   ?- session_energy(li013, gl3_prog_logique_tp1, E).
 
    % Vérifier le seuil d'un bâtiment :
    ?- respect_emax(bat_labo, 100).
@@ -311,7 +320,7 @@ run_energy_tests :-
    FIN — energy_module.pl
 
    RÉSUMÉ DES PRÉDICATS :
-     session_energy/3                  — E = ε(room) × duration(course)
+     session_energy/3                  — E = ε(room) * d_i
      respect_emax/2                    — HC-6 : E ≤ Emax(building)
      accumulate_building_energy/5      — Accumulateur récursif avec HC-6 early
      building_day_energy/4             — Σ E(b, d) pour métriques
@@ -321,5 +330,5 @@ run_energy_tests :-
      generate_schedule_with_energy/1   — Point d'entrée global
      generate_schedule_level_with_energy/2 — Par niveau (gl2/gl3/gl4)
      print_energy_report/1             — Rapport PASS/VIOLATION
-     run_energy_tests/0                — Suite de 10 tests unitaires
+     run_energy_tests/0                — défini dans test.pl
    ============================================================ */
