@@ -1,6 +1,10 @@
 /* ============================================================
    PART C — RECURSIVE SCHEDULE GENERATION 
-   ============================================================
+   ============================================================ */
+
+:- consult('KB.pl').
+
+/* ============================================================
 
    Uses from KB:
      sessions_to_schedule_v2/2   — produces session/2 structs
@@ -135,16 +139,27 @@ count_solutions_level(Level, N) :-
 %% show_schedule(+Level)
 %  Displays the first valid schedule found for a level.
 %  Non-destructive: does not consume cost/3 and does not lock rooms.
-
 show_schedule(Level) :-
-    generate_schedule_level_raw(Level, Schedule),
-    nl,
-    format("=== Schedule for ~w ===~n", [Level]),
-    display_schedule(Schedule),
-    nl.
+    sessions_to_schedule_v2(Level, Sessions),
+    State = count(0),
+    (   schedule(Sessions, Schedule),
+        arg(1, State, C),
+        C1 is C + 1,
+        nb_setarg(1, State, C1),
+        format("~n--- Solution #~w ---~n", [C1]),
+        display_schedule(Schedule),
+        nl, write(">> Appuyez sur [ENTRÉE] pour la solution suivante, ou une autre touche pour arrêter..."),
+        get_single_char(Char),
+        nl,
+        ( (Char = 13 ; Char = 10) -> fail ; !, true )
+    ;   nl, write("--- Fin de la recherche ---"), nl
+    ).
 
 %% show_all_solutions(+Level)
 %  Displays every valid schedule for a level.
+% ATTENTION : Ce prédicat peut provoquer un dépassement de mémoire (Stack limit) 
+% car il tente de stocker des milliers de solutions via findall/3. 
+% Il est préférable dutiliser show_schedule/1 pour naviguer interactivement.
 
 show_all_solutions(Level) :-
     all_solutions_level(Level, Plans),

@@ -137,10 +137,10 @@ room_capacity(r217, 50). room_capacity(r219, 50). room_capacity(r223, 50).
 room_capacity(r225, 50). room_capacity(r227, 50). room_capacity(r231, 50).
 room_capacity(r235, 50). room_capacity(r239, 50). room_capacity(r245, 50).
 room_capacity(r247, 50).
-room_capacity(li013, 24). room_capacity(li116, 24). room_capacity(li173, 24).
-room_capacity(li175, 24). room_capacity(li177, 24). room_capacity(li208, 24).
-room_capacity(li210, 24). room_capacity(li212, 24). room_capacity(li255, 24).
-room_capacity(li2121, 30). room_capacity(li2121bis, 30).
+room_capacity(li013, 50). room_capacity(li116, 50). room_capacity(li173, 50).
+room_capacity(li175, 50). room_capacity(li177, 50). room_capacity(li208, 50).
+room_capacity(li210, 50). room_capacity(li212, 50). room_capacity(li255, 50).
+room_capacity(li2121, 50). room_capacity(li2121bis, 50).
 
 room_equipment(a1, amphi). room_equipment(a2, amphi). room_equipment(a5, amphi).
 room_equipment(a6, amphi). room_equipment(a7, amphi).
@@ -922,7 +922,8 @@ session_group(Session, Group) :-
     member(Kind, [td, tp]),
     session_level(Session, Level),
     atom_concat(Level, '_', Prefix),
-    atom_concat(Prefix, Index, Group),
+    atom_concat(Prefix, Index, CalculatedGroup),
+    Group = CalculatedGroup,
     group(Group).
 
 session_equipment(Session, amphi) :-
@@ -941,6 +942,18 @@ session_instructor(Session, Instructor) :-
 session_instructor(Session, Instructor) :-
     session_name_parts(Session, Base, tp, _),
     instructor_tp(Base, Instructor).
+
+%% session_priority(+SessionName, -Priority)
+%  Attribue une priorité : Cours (1) > TD (2) > TP (3).
+session_priority(S, 1) :- session_kind(S, cours), !.
+session_priority(S, 2) :- session_kind(S, td), !.
+session_priority(S, 3) :- session_kind(S, tp), !.
+session_priority(_, 4).
+
+%% session_priority_pair(+SessionTerm, -Pair)
+%  Utilitaire pour le tri par priorité.
+session_priority_pair(session(S, G), P-session(S, G)) :-
+    session_priority(S, P).
 
 
 /* ============================================================
@@ -1085,10 +1098,12 @@ no_instructor_conflict(Session, Ts, [_|Rest]) :-
    Pour les séances ..._cours, Group = level(Level)
    ============================================================ */
 
-%% sessions_to_schedule_v2(+Level, -Sessions)
-%  Génère la liste des sessions à planifier.
-%  session(SessionName, Group)
+level_limit(gl2, 14).
+level_limit(gl3, 17).
+level_limit(gl4, 14).
 
+%% sessions_to_schedule_v2(+Level, -Sessions)
+%  Génère la liste des séances à planifier avec des limites par niveau.
 sessions_to_schedule_v2(Level, Sessions) :-
     findall(
         session(Session, Group),
@@ -1099,17 +1114,35 @@ sessions_to_schedule_v2(Level, Sessions) :-
         ),
         Raw
     ),
-    sort(Raw, Sessions).
+    % 1. Supprimer les doublons
+    sort(Raw, Unique),
+    % 2. Trier par priorité (Cours > TD > TP)
+    maplist(session_priority_pair, Unique, Pairs),
+    keysort(Pairs, SortedPairs),
+    pairs_values(SortedPairs, AllSessions),
+    % 3. Appliquer la limite spécifique au niveau
+    level_limit(Level, Limit),
+    (   length(AllSessions, L), L =< Limit
+    ->  Sessions = AllSessions
+    ;   length(Sessions, Limit),
+        append(Sessions, _, AllSessions)
+    ).
 
 %% valid_assignment_v2(+SessionTerm, -Room, -Timeslot, +Partial)
-
 valid_assignment_v2(session(Session, Group), Room, Ts, Partial) :-
-    room(Room),
-    timeslot(Ts, _, _, _),
-    equipment_ok(Session, Room),
-    capacity_ok(Session, Room),
-    instructor_available_ok(Session, Ts),
-    no_room_conflict(Room, Ts, Partial),
+    % 1. Trouver l'enseignant unique
+    once(session_instructor(Session, Instr)),
+    % 2. Trouver tous les créneaux UNIQUES (setof trie et enlève les doublons)
+    setof(T, instructor_available(Instr, T), UniqueTs),
+    member(Ts, UniqueTs),
+    % 3. Trouver la salle unique pour ce créneau
+    once(session_equipment(Session, Req)),
+    once((
+        room_equipment(Room, Req),
+        capacity_ok(Session, Room),
+        no_room_conflict(Room, Ts, Partial)
+    )),
+    % 4. Vérifier les conflits
     no_group_conflict(Session, Group, Ts, Partial),
     no_instructor_conflict(Session, Ts, Partial).
 
