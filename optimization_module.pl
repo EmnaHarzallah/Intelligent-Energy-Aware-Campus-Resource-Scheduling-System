@@ -1,4 +1,4 @@
-/* ============================================================
+ /* ============================================================
    CHARGER APRÈS :
      1) knowledge_base.pl
      2) recursive_scheduling.pl
@@ -11,10 +11,10 @@
      - E_total : total_weekly_energy/2 (module énergie)
      - Imbalance :
          Sum_{d in Days} (Emax_day(d) - Emin_day(d))
-       où Emax_day/Emin_day sont max/min des consommations des bâtiments
+       où Emax_day/Emin_day sont max min des consommations des bâtiments
        pour le jour d.
      - Fairness (salles) :
-         Var(R) = (1/m) * Sum_{r in Rooms} (Usage(r) - mu)^2
+      Var(R) = (1 (sur) m) * Sum_{r in Rooms} (Usage(r) - mu)^2
    ============================================================ */
 
 :- consult('knowledge_base.pl').

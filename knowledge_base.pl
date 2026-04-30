@@ -419,7 +419,7 @@ cost(gl4_compilation_td2, 7.5, 7.5).
 cost(gl4_compilation_tp1, 12, 12).
 cost(gl4_compilation_tp2, 12, 12).
 
-% Traitement d'images : Cours 22.5, TP 12
+% Traitement d images : Cours 22.5, TP 12
 cost(gl4_traitement_img_cours, 22.5, 22.5).
 cost(gl4_traitement_img_tp1, 12, 12).
 cost(gl4_traitement_img_tp2, 12, 12).
@@ -1047,7 +1047,7 @@ no_room_conflict_local(Room, Ts, [_|Rest]) :-
     no_room_conflict_local(Room, Ts, Rest).
 
 % ⑥ Pas de conflit de groupe
-%    Deux séances ne peuvent pas partager un même groupe effectif.
+%    Deux séances ne peuvent pas partager un meme groupe effectif.
 groups_overlap(level(Level), level(Level)).
 groups_overlap(level(Level), Group) :-
     group(Group),
@@ -1125,7 +1125,7 @@ sessions_to_schedule_v2(Level, Sessions) :-
 
 %% valid_assignment_v2(+SessionTerm, -Room, -Timeslot, +Partial)
 valid_assignment_v2(session(Session, Group), Room, Ts, Partial) :-
-    % 1. Trouver l'enseignant unique
+    % 1. Trouver l enseignant unique
     once(session_instructor(Session, Instr)),
     % 2. Trouver tous les créneaux UNIQUES (setof trie et enlève les doublons)
     setof(T, instructor_available(Instr, T), UniqueTs),

@@ -37,7 +37,7 @@
    ============================================================ */
 
 %% session_energy(+Room, +Session, -Energy)
-%  Calcule l'énergie consommée par une session dans une salle.
+%  Calcule l énergie consommée par une session dans une salle.
 %  Utilise room_energy_cost/2 et slot_hours/1 de la Knowledge Base.
 
 session_duration_hours(_Session, DurationHours) :-
@@ -273,7 +273,10 @@ print_energy_report(Schedule) :-
    Références d'attendu (avec slot_hours = 1.5) :
      - session_energy(r203, gl2_analyse2_td1, E)        -> E = 4.5
      - session_energy(li013, gl3_prog_logique_tp1, E)   -> E = 12
-     - building_day_energy([2 sessions bat_cours lundi], bat_cours, lundi, E)
+     - building_day_energy([
+|           assignment(gl2_analyse2_td1, gl2_1, r203, ts(lundi,1)),
+|           assignment(gl2_algebre2_td1, gl2_1, r209, ts(lundi,2))
+|       ], bat_cours, lundi, E).
                                                       -> E = 9
    ============================================================ */
 /* ============================================================
