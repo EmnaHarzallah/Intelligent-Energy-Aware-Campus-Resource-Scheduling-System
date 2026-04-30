@@ -1,9 +1,6 @@
 /* ============================================================
-   MILESTONE 3 — OPTIMISATION, FAIRNESS, ÉVALUATION MULTI-CRITÈRES
-   Projet : Intelligent Energy-Aware Campus Resource Scheduling System
-
    CHARGER APRÈS :
-     1) Knowledge-base.pl
+     1) knowledge_base.pl
      2) recursive_scheduling.pl
      3) energy_module.pl
 
@@ -20,6 +17,9 @@
          Var(R) = (1/m) * Sum_{r in Rooms} (Usage(r) - mu)^2
    ============================================================ */
 
+:- consult('knowledge_base.pl').
+:- consult('recursive_scheduling.pl').
+:- consult('energy_module.pl').
 
 /* ============================================================
    SECTION 1 : EXTRACTION DES DOMAINES
@@ -113,6 +113,9 @@ schedule_metrics(Schedule, metrics(ETotal, Imbalance, VarRoom)) :-
    SECTION 5 : COMPARAISON MULTI-CRITÈRES
    ============================================================ */
 
+weighted_value(metrics(E, I, V), weighted(WE, WI, WV), Score) :-
+    Score is WE * E + WI * I + WV * V.
+
 metrics_better(lexicographic,
                metrics(E1, I1, V1),
                metrics(E2, I2, V2)) :-
@@ -144,9 +147,6 @@ metrics_better(fairness,
     ;   V1 =:= V2, E1 < E2
     ;   V1 =:= V2, E1 =:= E2, I1 < I2
     ).
-
-weighted_value(metrics(E, I, V), weighted(WE, WI, WV), Score) :-
-    Score is WE * E + WI * I + WV * V.
 
 metrics_better(weighted(WE, WI, WV), M1, M2) :-
     weighted_value(M1, weighted(WE, WI, WV), S1),

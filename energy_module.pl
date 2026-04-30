@@ -1,12 +1,7 @@
 /* ============================================================
-   PARTIE 3 — MODÉLISATION ÉNERGÉTIQUE & ACCUMULATION NUMÉRIQUE
-   Auteur : Imen Ben Ouaghrem
-   Projet : Intelligent Energy-Aware Campus Resource Scheduling System
-   INSAT — GL3 — Semestre 2, 2025-2026
-   Superviseur : Mr Mohamed Khalgui
 
    CHARGER APRÈS :
-     1) Knowledge-base.pl
+     1) KB.pl
      2) recursive_scheduling.pl
 
    Ce module utilise les prédicats suivants de la Knowledge Base :

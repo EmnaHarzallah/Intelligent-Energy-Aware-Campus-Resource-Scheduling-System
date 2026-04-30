@@ -1,10 +1,5 @@
 /* ============================================================
-   INTELLIGENT ENERGY-AWARE CAMPUS SCHEDULING SYSTEM
-   Authors : Minyar Frifita
-   Projet   : Prolog
-   Version  : 3 — sans sous-groupes a/b
-   ============================================================
-
+ 
    LOGIQUE DE PLANIFICATION :
      • La charge horaire est suivie via cost/3 :
          cost(NomSeance, ReferenceHour, RemainingHour)
