@@ -1,10 +1,11 @@
 // ─── Domain Types ────────────────────────────────────────────────────────────
 
 export type Level = 'gl2' | 'gl3' | 'gl4';
-export type Day = 'lundi' | 'mardi' | 'mercredi' | 'jeudi' | 'vendredi';
+export type Day = 'lundi' | 'mardi' | 'mercredi' | 'jeudi' | 'vendredi' | 'samedi';
 export type SlotIndex = 1 | 2 | 3 | 4 | 5;
 export type SessionKind = 'cours' | 'td' | 'tp';
 export type RoomType = 'amphi' | 'salle_td' | 'labo_pc';
+export type SessionCountConfig = Record<SessionKind, number>;
 
 export interface Room {
   id: string;

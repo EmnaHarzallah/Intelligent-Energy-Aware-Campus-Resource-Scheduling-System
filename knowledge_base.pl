@@ -25,6 +25,7 @@
 
 :- dynamic cost/3.
 :- dynamic room_occupied/2.
+:- dynamic instructor_override/2.
 :- discontiguous cost/3.
 :- discontiguous valid_assignment_v2/4.
 :- discontiguous instructor_cours/2.
@@ -928,6 +929,12 @@ session_equipment(Session, salle_td) :-
 session_equipment(Session, labo_pc) :-
     session_kind(Session, tp).
 
+% Optional per-request override injected by server.pl:
+% instructor_override(BaseCourse, Instructor).
+session_instructor(Session, Instructor) :-
+    session_name_parts(Session, Base, _Kind, _),
+    instructor_override(Base, Instructor),
+    !.
 session_instructor(Session, Instructor) :-
     session_name_parts(Session, Base, cours, _),
     instructor_cours(Base, Instructor).
@@ -1061,8 +1068,7 @@ groups_overlap(Group, Group) :-
 no_group_conflict(_, _, _, []).
 no_group_conflict(Session, Group, Ts,
                   [assignment(OtherSession, OtherGroup, _, Ts)|Rest]) :-
-    (   Session \= OtherSession,
-        groups_overlap(Group, OtherGroup)
+    (   groups_overlap(Group, OtherGroup)
     ->  !, fail
     ;   no_group_conflict(Session, Group, Ts, Rest)
     ).
@@ -1073,8 +1079,7 @@ no_group_conflict(Session, Group, Ts, [_|Rest]) :-
 no_instructor_conflict(_, _, []).
 no_instructor_conflict(Session, Ts,
                         [assignment(OtherSession, _, _, Ts)|Rest]) :-
-    (   Session \= OtherSession,
-        session_instructor(Session, I),
+    (   session_instructor(Session, I),
         session_instructor(OtherSession, I)
     ->  !, fail
     ;   no_instructor_conflict(Session, Ts, Rest)

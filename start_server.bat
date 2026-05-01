@@ -2,6 +2,13 @@
 title ProScheduler — Prolog Server
 cd /d "%~dp0"
 echo.
+echo [ProScheduler] Stopping previous SWI-Prolog instances (if any)...
+taskkill /IM swipl.exe /F >nul 2>&1
+taskkill /IM swipl-win.exe /F >nul 2>&1
+
+echo [ProScheduler] Waiting for port 8080 to be released...
+timeout /t 1 /nobreak >nul
+
 echo [ProScheduler] Looking for SWI-Prolog...
 
 where swipl >nul 2>&1

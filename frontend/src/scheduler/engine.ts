@@ -3,25 +3,78 @@ import type {
   Assignment, ScheduleCandidate, GlobalOccupied,
 } from '../types';
 import { ROOMS_BY_TYPE, ROOMS_BY_ID } from '../data/rooms';
-import { LEVEL_GROUPS, LEVEL_LIMITS, COURSES_BY_LEVEL } from '../data/courses';
+import { LEVEL_GROUPS, COURSES_BY_LEVEL } from '../data/courses';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const DAYS: Day[] = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi'];
+const DAYS: Day[] = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
 const SLOTS: SlotIndex[] = [1, 2, 3, 4, 5];
+
+export interface SessionDemand {
+  courseId: string;
+  kind: SessionKind;
+  group: string;       // "level" for cours, or group id for td/tp
+  count: number;       // number of occurrences requested
+}
+
+function supportsKind(courseId: string, level: Level, kind: SessionKind): boolean {
+  const course = COURSES_BY_LEVEL[level].find(c => c.id === courseId);
+  if (!course) return false;
+  if (kind === 'cours') return course.hasCours;
+  if (kind === 'td') return course.hasTd;
+  return course.hasTp;
+}
+
+function normalizeCount(count: number): number {
+  if (!Number.isFinite(count)) return 0;
+  return Math.max(0, Math.floor(count));
+}
 
 // ─── Session Building ────────────────────────────────────────────────────────
 
 function buildSessions(
   level: Level,
   selectedCourseIds: string[],
-  instructorOverrides: Record<string, string>
+  instructorOverrides: Record<string, string>,
+  sessionDemands?: SessionDemand[]
 ): Session[] {
   const courses = COURSES_BY_LEVEL[level];
   const groups = LEVEL_GROUPS[level];
-  const limit = LEVEL_LIMITS[level];
 
   const allSessions: Session[] = [];
+
+  // Custom mode: exact request from UI (kind + count + group)
+  if (sessionDemands && sessionDemands.length > 0) {
+    for (const demand of sessionDemands) {
+      const count = normalizeCount(demand.count);
+      if (count <= 0) continue;
+
+      const course = courses.find(c => c.id === demand.courseId);
+      if (!course) continue;
+      if (!supportsKind(demand.courseId, level, demand.kind)) continue;
+
+      if (demand.kind === 'cours' && demand.group !== 'level') continue;
+      if (demand.kind !== 'cours' && !groups.includes(demand.group)) continue;
+
+      const instructor = instructorOverrides[demand.courseId] ?? course.defaultInstructor;
+      const priority = demand.kind === 'cours' ? 1 : demand.kind === 'td' ? 2 : 3;
+      for (let i = 0; i < count; i++) {
+        const idx = i + 1;
+        const sessionId = `${level}_${demand.courseId}_${demand.kind}${idx}`;
+        allSessions.push({
+          sessionId,
+          courseId: demand.courseId,
+          courseLabel: course.label,
+          level,
+          kind: demand.kind,
+          group: demand.group,
+          instructor,
+          priority,
+        });
+      }
+    }
+    return allSessions;
+  }
 
   // Priority 1: cours (level-wide)
   for (const courseId of selectedCourseIds) {
@@ -78,7 +131,7 @@ function buildSessions(
     }
   }
 
-  return allSessions.slice(0, limit);
+  return allSessions;
 }
 
 // ─── LCG Seeded Shuffle ──────────────────────────────────────────────────────
@@ -226,12 +279,13 @@ export interface GenerateOptions {
   level: Level;
   selectedCourseIds: string[];
   instructorOverrides: Record<string, string>;
+  sessionDemands?: SessionDemand[];
   globalOccupied: GlobalOccupied;
 }
 
 export function generateCandidates(options: GenerateOptions): ScheduleCandidate[] {
-  const { level, selectedCourseIds, instructorOverrides, globalOccupied } = options;
-  const sessions = buildSessions(level, selectedCourseIds, instructorOverrides);
+  const { level, selectedCourseIds, instructorOverrides, sessionDemands, globalOccupied } = options;
+  const sessions = buildSessions(level, selectedCourseIds, instructorOverrides, sessionDemands);
 
   const NUM_CANDIDATES = 10;
   const candidates: ScheduleCandidate[] = [];

@@ -6,22 +6,31 @@ interface OptimizationReportProps {
   candidates: ScheduleCandidate[];
   level: Level;
   selectedRank: number;
+  explanation?: string;
+  evaluatedCandidates?: number;
 }
 
-export default function OptimizationReport({ candidates, level, selectedRank }: OptimizationReportProps) {
+export default function OptimizationReport({
+  candidates,
+  level,
+  selectedRank,
+  explanation,
+  evaluatedCandidates,
+}: OptimizationReportProps) {
   const [expanded, setExpanded] = useState(false);
   const accent = LEVEL_ACCENTS[level];
   const best = candidates[0];
+  const evaluated = evaluatedCandidates ?? candidates.length;
 
-  const explanation = best
+  const fallbackExplanation = best
     ? `Solution #${best.rank} sélectionnée par ordre lexicographique : E_total=${best.metrics.eTotal} (minimal parmi ${candidates.length} candidats), Imbalance=${best.metrics.imbalance}, Fairness=${best.metrics.fairness}.`
     : '';
 
   return (
     <div style={{
-      background: '#141720',
+      background: 'var(--bg-card)',
       borderRadius: '12px',
-      border: '1px solid #1e2335',
+      border: '1px solid var(--border-1)',
       overflow: 'hidden',
     }}>
       <button
@@ -37,7 +46,7 @@ export default function OptimizationReport({ candidates, level, selectedRank }: 
           padding: '14px 18px',
           minHeight: '48px',
           background: 'transparent',
-          color: '#dde1ed',
+          color: 'var(--text-primary)',
           fontSize: '13px',
           fontWeight: 600,
           cursor: 'pointer',
@@ -55,11 +64,14 @@ export default function OptimizationReport({ candidates, level, selectedRank }: 
           }}>
             OPTIMISATION
           </span>
-          <span style={{ color: '#4a5268', fontSize: '12px', fontWeight: 400 }}>
-            {candidates.length} candidats analysés
+          <span style={{ color: 'var(--text-muted)', fontSize: '12px', fontWeight: 400 }}>
+            {evaluated} candidats analyses
           </span>
         </div>
-        <span style={{ color: '#4a5268', fontSize: '16px', transition: 'transform 0.2s', display: 'inline-block', transform: expanded ? 'rotate(180deg)' : 'none' }}>
+        <span style={{ marginRight: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
+          Voir details
+        </span>
+        <span style={{ color: 'var(--text-muted)', fontSize: '16px', transition: 'transform 0.2s', display: 'inline-block', transform: expanded ? 'rotate(180deg)' : 'none' }}>
           ▾
         </span>
       </button>
@@ -74,8 +86,8 @@ export default function OptimizationReport({ candidates, level, selectedRank }: 
             border: `1px solid ${accent}25`,
             marginBottom: '14px',
           }}>
-            <p style={{ fontSize: '12px', color: '#dde1ed', lineHeight: 1.6 }}>
-              {explanation}
+            <p style={{ fontSize: '12px', color: 'var(--text-primary)', lineHeight: 1.6 }}>
+              {explanation ?? fallbackExplanation}
             </p>
           </div>
 
@@ -90,10 +102,10 @@ export default function OptimizationReport({ candidates, level, selectedRank }: 
                       textAlign: 'left',
                       fontSize: '10.5px',
                       fontWeight: 600,
-                      color: '#4a5268',
+                      color: 'var(--text-muted)',
                       fontFamily: "'JetBrains Mono', monospace",
                       letterSpacing: '0.04em',
-                      borderBottom: '1px solid #1e2335',
+                      borderBottom: '1px solid var(--border-1)',
                     }}>
                       {col}
                     </th>
@@ -107,7 +119,7 @@ export default function OptimizationReport({ candidates, level, selectedRank }: 
                   return (
                     <tr key={c.rank} style={{
                       background: isBest ? `${accent}10` : 'transparent',
-                      borderBottom: '1px solid #1a1e2a',
+                      borderBottom: '1px solid var(--bg-card-2)',
                     }}>
                       <td style={{ padding: '9px 12px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -115,7 +127,7 @@ export default function OptimizationReport({ candidates, level, selectedRank }: 
                             fontFamily: "'JetBrains Mono', monospace",
                             fontSize: '11px',
                             fontWeight: 700,
-                            color: isBest ? accent : '#4a5268',
+                            color: isBest ? accent : 'var(--text-muted)',
                           }}>
                             #{c.rank}
                           </span>
@@ -133,16 +145,16 @@ export default function OptimizationReport({ candidates, level, selectedRank }: 
                           )}
                         </div>
                       </td>
-                      <td style={{ padding: '9px 12px', fontFamily: "'JetBrains Mono', monospace", fontSize: '12px', color: isBest ? '#34d399' : '#dde1ed' }}>
+                      <td style={{ padding: '9px 12px', fontFamily: "'JetBrains Mono', monospace", fontSize: '12px', color: isBest ? 'var(--green)' : 'var(--text-primary)' }}>
                         {c.metrics.eTotal}
                       </td>
-                      <td style={{ padding: '9px 12px', fontFamily: "'JetBrains Mono', monospace", fontSize: '12px', color: '#dde1ed' }}>
+                      <td style={{ padding: '9px 12px', fontFamily: "'JetBrains Mono', monospace", fontSize: '12px', color: 'var(--text-primary)' }}>
                         {c.metrics.imbalance}
                       </td>
-                      <td style={{ padding: '9px 12px', fontFamily: "'JetBrains Mono', monospace", fontSize: '12px', color: '#dde1ed' }}>
+                      <td style={{ padding: '9px 12px', fontFamily: "'JetBrains Mono', monospace", fontSize: '12px', color: 'var(--text-primary)' }}>
                         {c.metrics.fairness}
                       </td>
-                      <td style={{ padding: '9px 12px', fontFamily: "'JetBrains Mono', monospace", fontSize: '12px', color: '#dde1ed' }}>
+                      <td style={{ padding: '9px 12px', fontFamily: "'JetBrains Mono', monospace", fontSize: '12px', color: 'var(--text-primary)' }}>
                         {c.metrics.sessionCount}
                       </td>
                     </tr>
@@ -156,3 +168,4 @@ export default function OptimizationReport({ candidates, level, selectedRank }: 
     </div>
   );
 }
+

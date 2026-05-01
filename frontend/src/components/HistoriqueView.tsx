@@ -20,15 +20,15 @@ export default function HistoriqueView({ confirmedSchedules }: HistoriqueViewPro
         opacity: 0.55,
       }}>
         <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
-          <rect x="6" y="6" width="60" height="60" rx="12" fill="#141720" stroke="#1e2335" strokeWidth="1.5"/>
-          <circle cx="36" cy="36" r="14" stroke="#252a3a" strokeWidth="1.5" fill="none"/>
-          <path d="M36 28v8l5 5" stroke="#3a4055" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <rect x="6" y="6" width="60" height="60" rx="12" fill="var(--bg-card)" stroke="var(--border-1)" strokeWidth="1.5"/>
+          <circle cx="36" cy="36" r="14" stroke="var(--border-2)" strokeWidth="1.5" fill="none"/>
+          <path d="M36 28v8l5 5" stroke="var(--text-faint)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
         <div style={{ textAlign: 'center' }}>
-          <p style={{ fontSize: '15px', fontWeight: 600, color: '#dde1ed', marginBottom: '6px' }}>
+          <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>
             Aucun emploi confirmé
           </p>
-          <p style={{ fontSize: '13px', color: '#4a5268' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
             Les emplois du temps confirmés apparaîtront ici.
           </p>
         </div>
@@ -40,7 +40,7 @@ export default function HistoriqueView({ confirmedSchedules }: HistoriqueViewPro
     <div style={{ padding: '24px', maxWidth: '1100px', margin: '0 auto' }}>
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '4px' }}>Historique</h1>
-        <p style={{ fontSize: '13px', color: '#4a5268' }}>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
           {confirmedSchedules.length} emploi{confirmedSchedules.length > 1 ? 's' : ''} confirmé{confirmedSchedules.length > 1 ? 's' : ''}
         </p>
       </div>
@@ -68,9 +68,9 @@ function HistoriqueCard({ schedule, index }: { schedule: ConfirmedSchedule; inde
 
   return (
     <div style={{
-      background: '#141720',
+      background: 'var(--bg-card)',
       borderRadius: '14px',
-      border: '1px solid #1e2335',
+      border: '1px solid var(--border-1)',
       overflow: 'hidden',
     }}>
       {/* Header */}
@@ -79,19 +79,19 @@ function HistoriqueCard({ schedule, index }: { schedule: ConfirmedSchedule; inde
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '16px 20px',
-        borderBottom: expandedGroup ? '1px solid #1a1e2a' : 'none',
+        borderBottom: expandedGroup ? '1px solid var(--bg-card-2)' : 'none',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {/* Index badge */}
           <div style={{
             width: 32, height: 32, borderRadius: '9px',
-            background: '#1a1e2a',
-            border: '1px solid #252a3a',
+            background: 'var(--bg-card-2)',
+            border: '1px solid var(--border-2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: '12px',
             fontWeight: 700,
-            color: '#4a5268',
+            color: 'var(--text-muted)',
           }}>
             {index}
           </div>
@@ -110,7 +110,7 @@ function HistoriqueCard({ schedule, index }: { schedule: ConfirmedSchedule; inde
             {schedule.level.toUpperCase()}
           </span>
 
-          <span style={{ fontSize: '12.5px', color: '#4a5268' }}>
+          <span style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
             {groups.length} groupe{groups.length > 1 ? 's' : ''} · {schedule.metrics.sessionCount} séances
           </span>
         </div>
@@ -119,7 +119,7 @@ function HistoriqueCard({ schedule, index }: { schedule: ConfirmedSchedule; inde
           <span style={{
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: '10.5px',
-            color: '#3a4055',
+            color: 'var(--text-faint)',
           }}>
             {dateStr} {timeStr}
           </span>
@@ -137,9 +137,9 @@ function HistoriqueCard({ schedule, index }: { schedule: ConfirmedSchedule; inde
                   borderRadius: '6px',
                   fontSize: '11px',
                   fontWeight: 600,
-                  background: expandedGroup === g ? `${accent}20` : '#1a1e2a',
-                  color: expandedGroup === g ? accent : '#8892aa',
-                  border: expandedGroup === g ? `1px solid ${accent}45` : '1px solid #252a3a',
+                  background: expandedGroup === g ? `${accent}20` : 'var(--bg-card-2)',
+                  color: expandedGroup === g ? accent : 'var(--text-muted-2)',
+                  border: expandedGroup === g ? `1px solid ${accent}45` : '1px solid var(--border-2)',
                   transition: 'all 0.12s ease',
                   fontFamily: "'JetBrains Mono', monospace",
                   cursor: 'pointer',
@@ -167,7 +167,7 @@ function HistoriqueCard({ schedule, index }: { schedule: ConfirmedSchedule; inde
             }}>
               {expandedGroup.toUpperCase()}
             </span>
-            <span style={{ fontSize: '11px', color: '#3a4055' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-faint)' }}>
               Emploi du temps — Rang #{schedule.rank} · E={schedule.metrics.eTotal} · Imb={schedule.metrics.imbalance}
             </span>
           </div>
@@ -182,3 +182,4 @@ function HistoriqueCard({ schedule, index }: { schedule: ConfirmedSchedule; inde
     </div>
   );
 }
+

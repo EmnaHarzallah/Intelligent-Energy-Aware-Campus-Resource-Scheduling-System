@@ -23,7 +23,7 @@ function hexToRgba(hex: string, alpha: number): string {
 }
 
 export default function ScheduleGrid({ assignments, group, level, compact = false }: ScheduleGridProps) {
-  const cellHeight = compact ? 56 : 72;
+  const cellHeight = compact ? 62 : 94;
 
   // Filter: cours sessions (group='level') visible for all groups of this level
   //         td/tp sessions only for their specific group
@@ -44,9 +44,9 @@ export default function ScheduleGrid({ assignments, group, level, compact = fals
         style={{
           width: '100%',
           borderCollapse: 'separate',
-          borderSpacing: '3px',
+          borderSpacing: compact ? '3px' : '5px',
           tableLayout: 'fixed',
-          minWidth: '420px',
+          minWidth: compact ? '460px' : '880px',
         }}
       >
         <thead>
@@ -55,10 +55,10 @@ export default function ScheduleGrid({ assignments, group, level, compact = fals
               scope="col"
               style={{
                 width: compact ? '44px' : '52px',
-                padding: '4px 2px',
+                padding: compact ? '4px 2px' : '6px 2px',
                 fontFamily: "'JetBrains Mono', monospace",
-                fontSize: '10px',
-                color: '#3a4055',
+                fontSize: compact ? '10px' : '11px',
+                color: 'var(--text-faint)',
                 fontWeight: 500,
                 textAlign: 'center',
               }}
@@ -70,9 +70,9 @@ export default function ScheduleGrid({ assignments, group, level, compact = fals
               <th key={d.id} scope="col" style={{
                 padding: '4px 4px',
                 fontFamily: "'JetBrains Mono', monospace",
-                fontSize: '10px',
+                fontSize: compact ? '10px' : '11px',
                 fontWeight: 600,
-                color: '#4a5268',
+                color: 'var(--text-muted)',
                 textAlign: 'center',
                 letterSpacing: '0.04em',
               }}>
@@ -89,8 +89,8 @@ export default function ScheduleGrid({ assignments, group, level, compact = fals
                 style={{
                   padding: '2px 4px',
                   fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: '9.5px',
-                  color: '#3a4055',
+                  fontSize: compact ? '9.5px' : '10.5px',
+                  color: 'var(--text-faint)',
                   textAlign: 'right',
                   verticalAlign: 'middle',
                   fontWeight: 500,
@@ -105,9 +105,9 @@ export default function ScheduleGrid({ assignments, group, level, compact = fals
                   return (
                     <td key={d.id} style={{
                       height: `${cellHeight}px`,
-                      background: 'rgba(255,255,255,0.015)',
+                      background: 'rgba(143, 43, 46, 0.05)',
                       borderRadius: '5px',
-                      border: '1px solid #1a1e2a',
+                      border: '1px solid var(--bg-card-2)',
                     }} />
                   );
                 }
@@ -122,12 +122,12 @@ export default function ScheduleGrid({ assignments, group, level, compact = fals
                   <td key={d.id} style={{
                     height: `${cellHeight}px`,
                     background: bg,
-                    borderRadius: '7px',
+                    borderRadius: compact ? '7px' : '9px',
                     borderLeft: `3px solid ${color}`,
                     border: `1px solid ${hexToRgba(color, 0.18)}`,
                     borderLeftWidth: '3px',
                     borderLeftColor: color,
-                    padding: compact ? '5px 6px' : '7px 8px',
+                    padding: compact ? '5px 6px' : '9px 10px',
                     verticalAlign: 'top',
                     overflow: 'hidden',
                   }}>
@@ -140,7 +140,7 @@ export default function ScheduleGrid({ assignments, group, level, compact = fals
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span style={{
                           fontFamily: "'JetBrains Mono', monospace",
-                          fontSize: '8px',
+                          fontSize: compact ? '8px' : '9px',
                           fontWeight: 600,
                           color: color,
                           background: kindBadgeColor,
@@ -155,7 +155,7 @@ export default function ScheduleGrid({ assignments, group, level, compact = fals
                       </div>
                       <div style={{
                         fontWeight: 600,
-                        fontSize: compact ? '10.5px' : '11px',
+                        fontSize: compact ? '10.5px' : '12px',
                         color: color,
                         lineHeight: 1.2,
                         overflow: 'hidden',
@@ -167,8 +167,8 @@ export default function ScheduleGrid({ assignments, group, level, compact = fals
                       </div>
                       {!compact && (
                         <div style={{
-                          fontSize: '9.5px',
-                          color: '#4a5268',
+                          fontSize: '10.5px',
+                          color: 'var(--text-muted)',
                           lineHeight: 1.2,
                           overflow: 'hidden',
                           whiteSpace: 'nowrap',
@@ -179,8 +179,8 @@ export default function ScheduleGrid({ assignments, group, level, compact = fals
                       )}
                       <div style={{
                         fontFamily: "'JetBrains Mono', monospace",
-                        fontSize: '9px',
-                        color: '#3a4055',
+                        fontSize: compact ? '9px' : '10px',
+                        color: 'var(--text-faint)',
                         marginTop: 'auto',
                       }}>
                         {cell.roomId}
@@ -196,3 +196,4 @@ export default function ScheduleGrid({ assignments, group, level, compact = fals
     </div>
   );
 }
+

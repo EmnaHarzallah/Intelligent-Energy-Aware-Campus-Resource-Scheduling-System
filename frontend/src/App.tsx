@@ -1,18 +1,28 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { ConfirmedSchedule, GlobalOccupied } from './types';
 import NavBar from './components/NavBar';
 import PlanifierView from './components/PlanifierView';
 import HistoriqueView from './components/HistoriqueView';
 
 type ActiveTab = 'planifier' | 'historique';
+type ThemeMode = 'light' | 'dark';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('planifier');
+  const [theme, setTheme] = useState<ThemeMode>(() => {
+    const saved = window.localStorage.getItem('ui-theme');
+    return saved === 'dark' ? 'dark' : 'light';
+  });
   const [confirmedSchedules, setConfirmedSchedules] = useState<ConfirmedSchedule[]>([]);
   const [globalOccupied, setGlobalOccupied] = useState<GlobalOccupied>({
     roomSlots: new Set<string>(),
     instructorSlots: new Set<string>(),
   });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    window.localStorage.setItem('ui-theme', theme);
+  }, [theme]);
 
   function handleConfirm(schedule: ConfirmedSchedule) {
     const newRoomSlots = new Set(globalOccupied.roomSlots);
@@ -29,11 +39,13 @@ export default function App() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0b0d12', color: '#dde1ed', fontFamily: "'Outfit', sans-serif" }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: "'Outfit', sans-serif" }}>
       <NavBar
         activeTab={activeTab}
         onTabChange={setActiveTab}
         confirmedCount={confirmedSchedules.length}
+        theme={theme}
+        onToggleTheme={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
       />
       <main style={{ paddingTop: '60px' }}>
         {activeTab === 'planifier' ? (
@@ -48,3 +60,4 @@ export default function App() {
     </div>
   );
 }
+

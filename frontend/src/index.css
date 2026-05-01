@@ -10,28 +10,53 @@ html {
 
 body {
   font-family: 'Outfit', sans-serif;
-  background-color: #0b0d12;
-  color: #dde1ed;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 :root {
-  --bg-base: #0b0d12;
-  --bg-surface: #0f1118;
-  --bg-card: #141720;
-  --bg-card-2: #1a1e2a;
-  --border-1: #1a1e2a;
-  --border-2: #1e2335;
-  --border-3: #252a3a;
-  --text-primary: #dde1ed;
-  --text-muted: #8892aa;   /* raised from #4a5268 — 4.9:1 on #0b0d12 */
-  --text-faint: #4a5268;   /* decorative only — do not use for readable text */
-  --accent-gl2: #00c9b1;
-  --accent-gl3: #7c6af7;
-  --accent-gl4: #f97316;
-  --green: #34d399;
-  --focus-ring: 0 0 0 2px #0b0d12, 0 0 0 4px #7c6af7;
+  --bg-base: #f6f4f1;
+  --bg-surface: #f2efeb;
+  --bg-card: #ffffff;
+  --bg-card-2: #f7f3f0;
+  --border-1: #e4ddd7;
+  --border-2: #cfc4be;
+  --border-3: #bcaea6;
+  --text-primary: #2f3438;
+  --text-muted: #6f6b66;
+  --text-muted-2: #5f6f79;
+  --text-faint: #5d564f;
+  --accent-gl2: #6f8f86;
+  --accent-gl3: #8f2b2e;
+  --accent-gl4: #c17a42;
+  --green: #2f7d63;
+  --input-bg: #faf8f5;
+  --input-bg-disabled: #faf8f588;
+  --focus-ring: 0 0 0 2px #f6f4f1, 0 0 0 4px #8f2b2e;
+}
+
+:root[data-theme='dark'] {
+  --bg-base: #0f141b;
+  --bg-surface: #171e28;
+  --bg-card: #1e2631;
+  --bg-card-2: #25303d;
+  --border-1: #334154;
+  --border-2: #425269;
+  --border-3: #526580;
+  --text-primary: #e7edf5;
+  --text-muted: #b8c3d1;
+  --text-muted-2: #9eaec2;
+  --text-faint: #8d9eb4;
+  --accent-gl2: #9fc4b9;
+  --accent-gl3: #da686b;
+  --accent-gl4: #f2b07d;
+  --green: #58c49a;
+  --input-bg: #2a3645;
+  --input-bg-disabled: #2a364588;
+  --focus-ring: 0 0 0 2px #0f141b, 0 0 0 4px #58c49a;
 }
 
 ::-webkit-scrollbar {
@@ -39,14 +64,14 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0f1118;
+  background: var(--bg-surface);
 }
 ::-webkit-scrollbar-thumb {
-  background: #252a3a;
+  background: var(--border-3);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3a4055;
+  background: var(--text-faint);
 }
 
 button {
@@ -81,3 +106,4 @@ input, textarea {
     transition-duration: 0.01ms !important;
   }
 }
+
